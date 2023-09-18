@@ -1,5 +1,4 @@
 import bcrypt from "bcryptjs";
-import { url } from "inspector";
 import mongoose, { Model, Schema } from "mongoose";
 
 const emailRegexPattern: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
