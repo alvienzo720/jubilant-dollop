@@ -1,4 +1,4 @@
-import userModel from "../models/user.model";
+import userModel, { IUser } from "../models/user.model";
 import Errorhandler from "../utils/ErrorHandling";
 import { CatchAsyncError } from "../middleware/catchAsyncErrors";
 import { NextFunction, Response, Request } from "express";
@@ -7,6 +7,7 @@ import "dotenv/config";
 import ejs from "ejs";
 import path from "path";
 import sendMail from "../utils/sendMail";
+import { error } from "console";
 
 interface IRegistrationBody {
   name: string;
@@ -18,6 +19,11 @@ interface IRegistrationBody {
 interface IActivationToken {
   token: string;
   activationCode: string;
+}
+
+interface IActivationRequest {
+  activation_token: string;
+  activation_code: string;
 }
 
 export const registerUser = CatchAsyncError(
@@ -47,7 +53,7 @@ export const registerUser = CatchAsyncError(
           email: user.email,
           subject: "Activate your account",
           template: "activation-mail.ejs",
-          data, 
+          data,
         });
         res.status(200).json({
           success: true,
@@ -78,3 +84,34 @@ export const createActivationToken = (user: any): IActivationToken => {
   );
   return { token, activationCode };
 };
+
+export const activateUser = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { activation_token, activation_code } =
+        req.body as IActivationRequest;
+      const newUser: { user: IUser; activationCode: string } = Jwt.verify(
+        activation_token,
+        process.env.ACTIVATION_SECRET as string
+      ) as { user: IUser; activationCode: string };
+
+      if (newUser.activationCode !== activation_code) {
+        return next(new Errorhandler("Invalid Activation code", 400));
+      }
+      const { name, email, password } = newUser.user;
+
+      const emailExists = await userModel.findOne({ email });
+      if (emailExists) {
+        return next(new Errorhandler("Email Already Exists", 400));
+      }
+      const user = await userModel.create({
+        name,
+        email,
+        password,
+      });
+      res.status(201).json({ success: true });
+    } catch (error: any) {
+      return next(new Errorhandler(error.message, 400));
+    }
+  }
+);
