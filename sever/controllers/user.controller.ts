@@ -6,6 +6,7 @@ import Jwt, { Secret } from "jsonwebtoken";
 import "dotenv/config";
 import ejs from "ejs";
 import path from "path";
+import sendMail from "../utils/sendMail";
 
 interface IRegistrationBody {
   name: string;
@@ -42,9 +43,19 @@ export const registerUser = CatchAsyncError(
         data
       );
       try {
-        
-      } catch (error) {
-        
+        await sendMail({
+          email: user.email,
+          subject: "Activate your account",
+          template: "activation-mail.ejs",
+          data, 
+        });
+        res.status(200).json({
+          success: true,
+          message: `Please check you email: ${user.email} to activate your account`,
+          activationToken: activationToken.token,
+        });
+      } catch (error: any) {
+        return next(new Errorhandler(error.message, 400));
       }
     } catch (error: any) {
       return next(new Errorhandler(error.message, 400));
