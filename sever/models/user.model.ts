@@ -6,7 +6,7 @@ import Jwt from "jsonwebtoken";
 const emailRegexPattern: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export interface IUser extends Document {
-  _id: string;
+  _id: any;
   isModified(arg0: string): unknown;
   name: string;
   email: string;
