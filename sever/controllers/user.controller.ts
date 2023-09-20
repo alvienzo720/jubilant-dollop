@@ -47,6 +47,10 @@ interface IUpdateUserInfo {
   name?: string;
   email?: string;
 }
+interface IUpdateUserPassword {
+  oldPassword: string;
+  newPassword: string;
+}
 
 export const registerUser = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -268,6 +272,37 @@ export const updateUserInfo = CatchAsyncError(
 
       await user?.save();
       await redis.set(userId, JSON.stringify(user));
+      res.status(201).json({
+        success: true,
+        user,
+      });
+    } catch (error: any) {
+      return next(new Errorhandler(error.message, 400));
+    }
+  }
+);
+
+//update user password
+export const updatePassword = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { oldPassword, newPassword } = req.body as IUpdateUserPassword;
+      const user = req.user;
+
+      if (user?.password === undefined) {
+        return next(new Errorhandler("Invalid user", 400));
+      }
+      const isPasswordMatch = await (user as any)?.comparePassword(oldPassword);
+      
+      if (!isPasswordMatch) {
+        return next(
+          new Errorhandler("Old Password does not match old password ", 400)
+        );
+      }
+      user.password = newPassword;
+
+      await (user as any).save();
+
       res.status(201).json({
         success: true,
         user,
