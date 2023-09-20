@@ -5,12 +5,12 @@ import {
   logoutUser,
   registerUser,
 } from "../controllers/user.controller";
-import { isAuthenticated } from "../middleware/auth";
+import { authorizeRoles, isAuthenticated } from "../middleware/auth";
 
 const userRoutes = express.Router();
 userRoutes.post("/registration", registerUser);
 
 userRoutes.post("/activate-user", activateUser);
-userRoutes.post("/login-user", loginUser);
-userRoutes.get("/logout-user",isAuthenticated ,logoutUser);
+userRoutes.post("/login", loginUser);
+userRoutes.get("/logout", isAuthenticated,authorizeRoles("admin"), logoutUser);
 export default userRoutes;
