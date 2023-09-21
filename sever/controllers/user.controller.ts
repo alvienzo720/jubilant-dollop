@@ -43,6 +43,15 @@ interface ISocialAuthBody {
   avatar: string;
 }
 
+interface IUpdateUserInfo {
+  name?: string;
+  email?: string;
+}
+interface IUpdateUserPassword {
+  oldPassword: string;
+  newPassword: string;
+}
+
 export const registerUser = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -206,6 +215,7 @@ export const updateAccessToken = CatchAsyncError(
         { expiresIn: "3d" }
       );
 
+      req.user = user;
       res.cookie("access_token", accessToken, accessTokenOptions);
       res.cookie("refresh_token", refreshToken, refreshTokenOptions);
       res.status(200).json({ status: "success", accessToken });
@@ -236,6 +246,67 @@ export const socialAuth = CatchAsyncError(
         const newUser = await userModel.create({ email, name, avatar });
         sendToken(newUser, 200, res);
       }
+    } catch (error: any) {
+      return next(new Errorhandler(error.message, 400));
+    }
+  }
+);
+
+//update user info
+export const updateUserInfo = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, name } = req.body as IUpdateUserInfo;
+      const userId = req.user?._id;
+      const user = await userModel.findById(userId);
+      if (email && user) {
+        const emailExists = await userModel.findOne({ email });
+        if (emailExists) {
+          return next(new Errorhandler("Email already exists", 400));
+        }
+        user.email = email;
+      }
+      if (name && user) {
+        user.name = name;
+      }
+
+      await user?.save();
+      await redis.set(userId, JSON.stringify(user));
+      res.status(201).json({
+        success: true,
+        user,
+      });
+    } catch (error: any) {
+      return next(new Errorhandler(error.message, 400));
+    }
+  }
+);
+
+//update user password
+export const updatePassword = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { oldPassword, newPassword } = req.body as IUpdateUserPassword;
+      const user = req.user;
+
+      if (user?.password === undefined) {
+        return next(new Errorhandler("Invalid user", 400));
+      }
+      const isPasswordMatch = await (user as any)?.comparePassword(oldPassword);
+      
+      if (!isPasswordMatch) {
+        return next(
+          new Errorhandler("Old Password does not match old password ", 400)
+        );
+      }
+      user.password = newPassword;
+
+      await (user as any).save();
+
+      res.status(201).json({
+        success: true,
+        user,
+      });
     } catch (error: any) {
       return next(new Errorhandler(error.message, 400));
     }
