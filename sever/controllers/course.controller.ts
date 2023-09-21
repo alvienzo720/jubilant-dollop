@@ -75,3 +75,17 @@ export const getSingleCourse = CatchAsyncError(
     }
   }
 );
+
+//get all courses aunthenticated
+export const getAllCOurses = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const courses = await CourseModel.find().select(
+        "-courseData.videoUrl -courseData.suggestions -courseData.questions -courseData.links"
+      );
+      res.status(201).json({ sucess: true, courses });
+    } catch (error: any) {
+      return next(new Errorhandler(error.message, 500));
+    }
+  }
+);
