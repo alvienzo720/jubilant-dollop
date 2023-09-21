@@ -58,3 +58,34 @@ export const editCourse = CatchAsyncError(
     }
   }
 );
+
+//get singile course without purchasing
+export const getSingleCourse = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const course = await CourseModel.findById(req.params.id).select(
+        "-courseData.videoUrl -courseData.suggestions -courseData.questions -courseData.links"
+      );
+      res.status(201).json({
+        success: true,
+        course,
+      });
+    } catch (error: any) {
+      return next(new Errorhandler(error.message, 500));
+    }
+  }
+);
+
+//get all courses aunthenticated
+export const getAllCOurses = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const courses = await CourseModel.find().select(
+        "-courseData.videoUrl -courseData.suggestions -courseData.questions -courseData.links"
+      );
+      res.status(201).json({ sucess: true, courses });
+    } catch (error: any) {
+      return next(new Errorhandler(error.message, 500));
+    }
+  }
+);
