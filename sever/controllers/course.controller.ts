@@ -4,6 +4,8 @@ import cloudinary from "cloudinary";
 import { createCourse } from "../services/course.service";
 import Errorhandler from "../utils/ErrorHandling";
 import CourseModel from "../models/course.model";
+import { redirect } from "@clerk/nextjs/dist/types/server";
+import { redis } from "../utils/redis";
 
 //create course or upload course
 export const uploadCourse = CatchAsyncError(
@@ -63,13 +65,24 @@ export const editCourse = CatchAsyncError(
 export const getSingleCourse = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const course = await CourseModel.findById(req.params.id).select(
-        "-courseData.videoUrl -courseData.suggestions -courseData.questions -courseData.links"
-      );
-      res.status(201).json({
-        success: true,
-        course,
-      });
+      const courseId = req.params.id;
+      //check if course is in redis
+      const isCachedExisit = await redis.get(courseId);
+      if (isCachedExisit) {
+        const course = JSON.parse(isCachedExisit);
+        res.status(200).json({ sucess: true, course });
+      } else {
+        //fetch course from mongo db
+        const course = await CourseModel.findById(req.params.id).select(
+          "-courseData.videoUrl -courseData.suggestions -courseData.questions -courseData.links"
+        );
+        //save course to redis now
+        await redis.set(courseId, JSON.stringify(course));
+        res.status(201).json({
+          success: true,
+          course,
+        });
+      }
     } catch (error: any) {
       return next(new Errorhandler(error.message, 500));
     }
@@ -80,11 +93,42 @@ export const getSingleCourse = CatchAsyncError(
 export const getAllCOurses = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const courses = await CourseModel.find().select(
-        "-courseData.videoUrl -courseData.suggestions -courseData.questions -courseData.links"
-      );
-      res.status(201).json({ sucess: true, courses });
+      const isCachedExisit = await redis.get("allCourses");
+      if (isCachedExisit) {
+        const courses = JSON.parse(isCachedExisit);
+        res.status(200).json({ sucess: true, courses });
+      } else {
+        const courses = await CourseModel.find().select(
+          "-courseData.videoUrl -courseData.suggestions -courseData.questions -courseData.links"
+        );
+        await redis.set("allCourses", JSON.stringify(courses));
+        res.status(201).json({ sucess: true, courses });
+      }
     } catch (error: any) {
+      return next(new Errorhandler(error.message, 500));
+    }
+  }
+);
+
+//get course content for valid users
+export const getCourseByUser = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userCourseList = req.user?.courses;
+
+      const courseId = req.params.id;
+      const courseExisits = userCourseList?.find(
+        (course: any) => course._id.toString() === courseId.toString()
+      );
+      if (!courseExisits) {
+        return next(
+          new Errorhandler("You are not enrolled in this course", 403)
+        );
+      }
+      const course = await CourseModel.findById(courseId);
+      res.status(200).json({ success: true, course });
+    } catch (error: any) {
+      console.log("error", error);
       return next(new Errorhandler(error.message, 500));
     }
   }
