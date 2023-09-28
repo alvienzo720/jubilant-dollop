@@ -30,6 +30,6 @@ courseRoutes.get("/get-all-courses", getAllCOurses);
 
 courseRoutes.get("/get-course-content/:id", isAuthenticated, getCourseByUser);
 
-courseRoutes.put("/add-question/:id", isAuthenticated, addQuestion);
+courseRoutes.put("/add-question", isAuthenticated, addQuestion);
 
 export default courseRoutes;
