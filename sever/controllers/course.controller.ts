@@ -8,6 +8,7 @@ import { redis } from "../utils/redis";
 import mongoose from "mongoose";
 import path from "path";
 import ejs from "ejs";
+import sendMail from "../utils/sendMail";
 
 interface IAddQuestionData {
   question: string;
@@ -231,6 +232,16 @@ export const addAnswer = CatchAsyncError(
           path.join(__dirname, "../mails/question-reply.ejs"),
           data
         );
+        try {
+          await sendMail({
+            email: question.user.email,
+            subject: "Question Reply",
+            template: "question-reply.ejs",
+            data,
+          });
+        } catch (erro: any) {
+          return next(new Errorhandler(erro.message, 500));
+        }
       }
 
       res.status(200).json({
