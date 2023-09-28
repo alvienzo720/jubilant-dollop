@@ -6,6 +6,8 @@ import Errorhandler from "../utils/ErrorHandling";
 import CourseModel from "../models/course.model";
 import { redis } from "../utils/redis";
 import mongoose from "mongoose";
+import path from "path";
+import ejs from "ejs";
 
 interface IAddQuestionData {
   question: string;
@@ -219,7 +221,17 @@ export const addAnswer = CatchAsyncError(
 
       await course?.save();
 
-      if(req.user?._id === question.user._id){}
+      if (req.user?._id === question.user._id) {
+      } else {
+        const data = {
+          name: question.user.name,
+          title: courseContent.title,
+        };
+        const html = await ejs.renderFile(
+          path.join(__dirname, "../mails/question-reply.ejs"),
+          data
+        );
+      }
 
       res.status(200).json({
         success: true,
