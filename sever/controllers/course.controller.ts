@@ -6,6 +6,9 @@ import Errorhandler from "../utils/ErrorHandling";
 import CourseModel from "../models/course.model";
 import { redis } from "../utils/redis";
 import mongoose from "mongoose";
+import path from "path";
+import ejs from "ejs";
+import sendMail from "../utils/sendMail";
 
 interface IAddQuestionData {
   question: string;
@@ -18,6 +21,13 @@ interface IAddAnswerData {
   courseId: string;
   contentId: string;
   questionId: string;
+}
+
+interface IAddReviewData {
+  review: string;
+  courseId: string;
+  rating: number;
+  userId: string;
 }
 //create course or upload course
 export const uploadCourse = CatchAsyncError(
@@ -219,12 +229,79 @@ export const addAnswer = CatchAsyncError(
 
       await course?.save();
 
-      if(req.user?._id === question.user._id){}
+      if (req.user?._id === question.user._id) {
+      } else {
+        const data = {
+          name: question.user.name,
+          title: courseContent.title,
+        };
+        const html = await ejs.renderFile(
+          path.join(__dirname, "../mails/question-reply.ejs"),
+          data
+        );
+        try {
+          await sendMail({
+            email: question.user.email,
+            subject: "Question Reply",
+            template: "question-reply.ejs",
+            data,
+          });
+        } catch (erro: any) {
+          return next(new Errorhandler(erro.message, 500));
+        }
+      }
 
       res.status(200).json({
         success: true,
         course,
       });
+    } catch (error: any) {
+      return next(new Errorhandler(error.message, 500));
+    }
+  }
+);
+
+//add review in course
+export const addReview = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userCourseList = req.user?.courses;
+      const courseId = req.params.id;
+      const courseExists = userCourseList?.some(
+        (course: any) => course._id.toString() === courseId.toString()
+      );
+      if (!courseExists) {
+        return next(
+          new Errorhandler("Your not eligble to access this course", 404)
+        );
+      }
+      const course = await CourseModel.findById(courseId);
+
+      const { review, rating } = req.body as IAddReviewData;
+      const reviewData: any = {
+        user: req.user,
+        comment: review,
+        rating,
+      };
+      course?.reviews.push(reviewData);
+
+      let avg = 0;
+
+      course?.reviews.forEach((rev: any) => (avg += rev.rating));
+
+      if (course) {
+        course.ratings = avg / course.reviews.length;
+      }
+
+      await course?.save();
+
+      const notification = {
+        title: "New Review Recived",
+        message: `${req.user?.name} has given a review on your in ${course?.name}`,
+      };
+
+      //create a notification
+      res.status(200).json({ success: true, course });
     } catch (error: any) {
       return next(new Errorhandler(error.message, 500));
     }
