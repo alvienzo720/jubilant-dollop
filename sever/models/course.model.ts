@@ -1,7 +1,6 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 import { IUser } from "./user.model";
 
-
 interface IComment extends Document {
   user: IUser;
   question: string;
@@ -57,6 +56,7 @@ const reviewSchema = new Schema<IReview>({
     default: 0,
   },
   comment: String,
+  commentReplies: [Object],
 });
 
 const linkSchema = new Schema<ILink>({
