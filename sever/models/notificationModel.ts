@@ -1,4 +1,4 @@
-import { Document, Schema } from "mongoose";
+import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface INotification extends Document {
   title: string;
@@ -15,3 +15,10 @@ const notificationSchema = new Schema<INotification>(
   },
   { timestamps: true }
 );
+
+const NotificationModel: Model<INotification> = mongoose.model(
+  "Notification",
+  notificationSchema
+);
+
+export default NotificationModel;

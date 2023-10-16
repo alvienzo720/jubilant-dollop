@@ -8,6 +8,7 @@ import { newOrder } from "../services/order.service";
 import ejs from "ejs";
 import path from "path";
 import sendMail from "../utils/sendMail";
+import NotificationModel from "../models/notificationModel";
 
 //create order
 export const createOrder = CatchAsyncError(
@@ -66,12 +67,16 @@ export const createOrder = CatchAsyncError(
         }
       } catch (error: any) {
         return next(new Errorhandler(error.message, 500));
-      } 
+      }
 
-      user?.courses.push();
+      user?.courses.push({ courseId: course._id.toString() });
       await user?.save();
-
-
+      await NotificationModel.create({
+        user: user?._id,
+        title: "New Order",
+        message: `You have a new order from ${course?.name}`,
+      });
+      res.status(201).json({ sucess: true, order: course });
     } catch (error: any) {
       return next(new Errorhandler(error.message, 500));
     }
