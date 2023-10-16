@@ -19,7 +19,7 @@ export const createOrder = CatchAsyncError(
       const user = await userModel.findById(req.user?._id);
 
       const courseExisitsInUser = user?.courses.some(
-        (course: any) => course._id.toString() === courseId
+        (course: any) => course.courseId.toString() === courseId
       );
 
       if (courseExisitsInUser) {
@@ -38,7 +38,7 @@ export const createOrder = CatchAsyncError(
         payment_info,
       };
 
-      newOrder(data, res, next);
+      // newOrder(data, res, next);
       const mailData = {
         order: {
           _id: course._id.toString().slice(0, 6),
@@ -77,7 +77,11 @@ export const createOrder = CatchAsyncError(
         title: "New Order",
         message: `You have a new order from ${course?.name}`,
       });
-      res.status(201).json({ sucess: true, order: course });
+      if (course.purchased) {
+        course.purchased += 1;
+      }
+      await course.save();
+      newOrder(data, res, next);
     } catch (error: any) {
       return next(new Errorhandler(error.message, 500));
     }
