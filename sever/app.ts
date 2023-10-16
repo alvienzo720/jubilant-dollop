@@ -15,9 +15,8 @@ app.use(cookieParser());
 
 app.use(cors({ origin: process.env.ORIGIN }));
 
-app.use("/api/v1", userRoutes);
-app.use("/api/v1", courseRoutes);
-app.use("/api/v1", orderRouter);
+app.use("/api/v1", userRoutes, courseRoutes, orderRouter);
+
 
 app.get("/", (req: Request, res: Response, next: NextFunction) => {
   res.status(200).json({
