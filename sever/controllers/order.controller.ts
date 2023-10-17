@@ -77,9 +77,9 @@ export const createOrder = CatchAsyncError(
         title: "New Order",
         message: `You have a new order from ${course?.name}`,
       });
-      if (course.purchased) {
-        course.purchased += 1;
-      }
+
+      course.purchased ? (course.purchased += 1) : course.purchased;
+      
       await course.save();
       newOrder(data, res, next);
     } catch (error: any) {

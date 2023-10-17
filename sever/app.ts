@@ -8,6 +8,7 @@ import { ErrorMiddleware } from "./middleware/error";
 import userRoutes from "./routes/user.routes";
 import courseRoutes from "./routes/course.routes";
 import orderRouter from "./routes/order.routes";
+import notificationRoute from "./routes/notifications.routes";
 
 app.use(express.json({ limit: "50mb" }));
 
@@ -15,7 +16,7 @@ app.use(cookieParser());
 
 app.use(cors({ origin: process.env.ORIGIN }));
 
-app.use("/api/v1", userRoutes, courseRoutes, orderRouter);
+app.use("/api/v1", userRoutes, courseRoutes, orderRouter, notificationRoute);
 
 
 app.get("/", (req: Request, res: Response, next: NextFunction) => {
