@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { CatchAsyncError } from "../middleware/catchAsyncErrors";
 import cloudinary from "cloudinary";
-import { createCourse } from "../services/course.service";
+import { createCourse, getAllCoursesService } from "../services/course.service";
 import Errorhandler from "../utils/ErrorHandling";
 import CourseModel from "../models/course.model";
 import { redis } from "../utils/redis";
@@ -252,7 +252,7 @@ export const addAnswer = CatchAsyncError(
         const data = {
           name: question.user.name,
           title: "New Question Reply Recived",
-          message:`you have a new question reply in ${courseContent.title}`
+          message: `you have a new question reply in ${courseContent.title}`,
         };
         const html = await ejs.renderFile(
           path.join(__dirname, "../mails/question-reply.ejs"),
@@ -357,6 +357,18 @@ export const addReplyReview = CatchAsyncError(
 
       await course?.save();
       res.status(200).json({ sucess: true, course });
+    } catch (error: any) {
+      return next(new Errorhandler(error.message, 500));
+    }
+  }
+);
+
+//get all courses
+
+export const getAllCourses = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      getAllCoursesService(res);
     } catch (error: any) {
       return next(new Errorhandler(error.message, 500));
     }
