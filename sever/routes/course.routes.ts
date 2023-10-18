@@ -41,4 +41,6 @@ courseRoutes.put("/add-review/:id", isAuthenticated, addReview);
 
 courseRoutes.put("/add-review-reply", isAuthenticated, addReplyReview);
 
+courseRoutes.get("/get-all-Courses", isAuthenticated, getCourseByUser);
+
 export default courseRoutes;
