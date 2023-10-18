@@ -1,6 +1,9 @@
 import express from "express";
 import { authorizeRoles, isAuthenticated } from "../middleware/auth";
-import { getNotification } from "../controllers/notification.controller";
+import {
+  getNotification,
+  updateNotification,
+} from "../controllers/notification.controller";
 
 const notificationRoute = express.Router();
 
@@ -9,5 +12,10 @@ notificationRoute.get(
   isAuthenticated,
   getNotification
 );
+notificationRoute.put(
+  "/update-notification/:id",
+  isAuthenticated,
+  updateNotification
+);
 
-export default notificationRoute
+export default notificationRoute;
