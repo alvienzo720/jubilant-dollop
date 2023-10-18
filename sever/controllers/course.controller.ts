@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import path from "path";
 import ejs from "ejs";
 import sendMail from "../utils/sendMail";
+import NotificationModel from "../models/notificationModel";
 
 interface IAddQuestionData {
   question: string;
@@ -191,6 +192,12 @@ export const addQuestion = CatchAsyncError(
 
       courseContent.questions.push(newQuestion);
 
+      await NotificationModel.create({
+        user: req.user?._id,
+        title: "New Question Recived",
+        message: `You have a new question in ${courseContent.title}`,
+      });
+
       await course?.save();
       res.status(200).json({
         success: true,
@@ -237,10 +244,15 @@ export const addAnswer = CatchAsyncError(
       await course?.save();
 
       if (req.user?._id === question.user._id) {
+        await NotificationModel.create({
+          user: question.user.name,
+          title: courseContent.title,
+        });
       } else {
         const data = {
           name: question.user.name,
-          title: courseContent.title,
+          title: "New Question Reply Recived",
+          message:`you have a new question reply in ${courseContent.title}`
         };
         const html = await ejs.renderFile(
           path.join(__dirname, "../mails/question-reply.ejs"),
