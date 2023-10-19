@@ -29,11 +29,13 @@ export const getCourseAnalytics = CatchAsyncError(
   }
 );
 
-export const getOrderAnalytics =  CatchAsyncError(async(req:Request, res:Response, next:NextFunction)=>{
-  try {
-    const orders =  await generateLast12MonthData(OrderModel)
-    res.status(200).json({sucess:true, orders})
-  } catch (error:any) {
-    return next(new Errorhandler(error.message, 500))
+export const getOrderAnalytics = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orders = await generateLast12MonthData(OrderModel);
+      res.status(200).json({ sucess: true, orders });
+    } catch (error: any) {
+      return next(new Errorhandler(error.message, 500));
+    }
   }
-})
+);
